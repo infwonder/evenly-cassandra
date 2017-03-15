@@ -1,0 +1,24 @@
+{
+  "name": "evenly-cassandra",
+  "version": "0.0.1",
+  "description": "File chunking read from and write to Apache Cassandra cluster",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/infwonder/evenly-cassandra.git"
+  },
+  "author": "Jason Lin",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/infwonder/evenly-cassandra/issues"
+  },
+  "dependencies": {
+    "cassandra-driver": "^3.2.0",
+    "bluebird": "^3.4.7",
+    "mkdirp": "^0.5.1",
+    "xrange": "^1.0.1"
+  }
+}
