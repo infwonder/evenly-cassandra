@@ -166,7 +166,7 @@ module.exports =
                      .then( () => { wait = wait + i; if (wait == 120) return callback(); } ); }, 15000);
                 });
              })
-             .catch( (err) => { client.shutdown(); return callback(err); } );
+             .catch( (err) => { return callback(err); } );
          } else {
            console.log("Already initialized. Quit ...");
            return callback();
@@ -196,8 +196,6 @@ module.exports =
 
   _delete_cluster: function(fhash, metadata, callback)
   {
-
-
     var parts = Object.keys(metadata); var wait = 0;
 
     parts.map( (k) =>
@@ -223,8 +221,8 @@ module.exports =
                     console.log("DEBUG: deleteing top-level cluster meta (hash = " + fhash + ")");
                     var deleteMeta = 'delete from ' + k + '.' + s + ' where filehash = ?';
                     client.execute(deleteMeta, [ fhash ], {prepare: true})
-                      .then( () => { client.shutdown(); return callback(); })
-                      .catch( (err) => { client.shutdown(); return callback(err); } );
+                      .then( () => { return callback(); })
+                      .catch( (err) => { return callback(err); } );
                  }
               })
       });
@@ -274,7 +272,7 @@ module.exports =
                });
           }
         }
-      ).catch( (err) => { client.shutdown(); return callback(err); } );  
+      ).catch( (err) => { return callback(err); } );  
   },
 
   _new_cluster: function(path, fsize, defcluster, clcount, callback)
@@ -312,7 +310,7 @@ module.exports =
 
           client.execute(queryNew, [filemd5, fsize, defcluster, clcount, path, cmeta, true], {prepare: true})
             .then( () => { Object.keys(cmeta).map( (k) => { fs.unlink(module.exports.outdir + '/_c_' + filemd5 + '_p_' + k); }); callback(null, filemd5); } )
-            .catch( (err) => { client.shutdown(); return callback(err, filemd5); });
+            .catch( (err) => { return callback(err, filemd5); });
         });
 
         xrange(0, clcount).map( (i) => 
