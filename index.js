@@ -23,6 +23,7 @@ const util = require('util');
 const fpath = require('path');
 const xrange = require('xrange');
 const Promise = require('bluebird');
+const queue = require('queue');
 const EventEmitter = require("events");
 class evenlyEvents extends EventEmitter {}
 const evenlySender = new evenlyEvents();
@@ -791,12 +792,39 @@ module.exports =
     });
   },
 
-  dirlist_upload: function(groups, fulllist, callback) 
+  init_watcher_upload: function(callback) 
   {
     if (module.exports.indir === undefined) throw("Please define indir attribute first ...");
-    if (fulllist.length === 0) throw("No file to be uploaded ..."); // should we throw here?
+    if (module.exports.ULJobQ === undefined) module.exports.ULJobQ = queue(); // initialize queue
+    module.exports.ULJobQ.autostart = true;
+    module.exports.ULJobQ.start((err) => { if (err) throw(err); });
 
-    var jobgroups = module.exports._array_groups(fulllist, groups);
+    return callback();
+  },
+
+  new_qTask_upload: function(filelist, callback)
+  {
+    module.exports._q_UL_List.push(filelist);
+    module.exports.ULJobQ.push(module.exports._qTask_upload);
+    return callback();
+  },
+
+// New form of job queue with queue NPM module ...
+  ULJobQ: undefined,
+  DLJobQ: undefined,
+  _q_UL_List: [],
+  _q_DL_List: [],
+
+  _qTask_upload: function(callback)
+  {
+    if (module.exports._q_UL_List.length === 0) {
+      console.log("It seems that the file list is empty ...");
+      callback();
+    }
+
+    var groups = 4; // fixed for now during tests ...
+    var thislist = module.exports._q_UL_List.shift(1);
+    var jobgroups = module.exports._array_groups(thislist, groups);
 
     module.exports._batch_sessions(jobgroups, module.exports._new_batch_upload, callback);
   },

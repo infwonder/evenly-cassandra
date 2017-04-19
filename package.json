@@ -16,9 +16,10 @@
     "url": "https://github.com/infwonder/evenly-cassandra/issues"
   },
   "dependencies": {
-    "cassandra-driver": "^3.2.0",
     "bluebird": "^3.4.7",
+    "cassandra-driver": "^3.2.0",
     "mkdirp": "^0.5.1",
+    "queue": "^4.2.1",
     "xrange": "^1.0.1"
   }
 }
