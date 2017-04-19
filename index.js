@@ -791,6 +791,48 @@ module.exports =
     });
   },
 
+  dirlist_upload: function(groups, fulllist, callback) 
+  {
+    if (module.exports.indir === undefined) throw("Please define indir attribute first ...");
+    if (fulllist.length === 0) throw("No file to be uploaded ..."); // should we throw here?
+
+    var jobgroups = module.exports._array_groups(fulllist, groups);
+
+    module.exports._batch_sessions(jobgroups, module.exports._new_batch_upload, callback);
+  },
+
+  _new_batch_download: function(fhashlist, callback)
+  {
+    var failedlist = []; var donelist = {};
+    var plan = module.exports._array_groups(fhashlist, module.exports.batchsize);
+    var wait = 0;
+
+    plan.map( (u) => 
+    {
+      u.map( (i) => 
+      {
+        var myhash = i;
+        module.exports.join_chunks(myhash, (err, name) => 
+        {
+          if (err) { 
+            failedlist.push(myhash); 
+          } else {
+            donelist[myhash] = name;
+          }
+
+          wait++;
+          if (wait == fhashlist.length) {
+            if (failedlist.length == 0) {
+              return callback(null, donelist);
+            } else {
+              return callback("Error: some files were not downloaded...", failedlist);
+            }
+          }
+        });
+      });
+    });
+  },
+
   batch_download: function(fhashlist, groups, callback) 
   {
     var jobgroups = module.exports._array_groups(fhashlist, groups);
