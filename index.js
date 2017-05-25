@@ -36,9 +36,9 @@ module.exports =
   indir: undefined,
   peers: [],
   client: undefined,
-  maxchunks: 4096, // counts
+  maxchunks: 2048, // counts
   maxcsize: 524288,
-  maxsize: 52428800,
+  maxsize: 67108864,
   slgroup: 3,
   retrial: 4,
   retrial_time: 3500,
@@ -163,7 +163,8 @@ module.exports =
                 xrange(0,16).map( (i) => {
                    var tid = i.toString(16);
                    var queryTab = "create table sg_" + tid + " (filehash ascii, chunkcount int, " + slots + ", PRIMARY KEY (filehash) )";
-                   setTimeout( () => { client.execute(queryTab, {prepare: false})
+                   //console.log("DEBUG: the cql is: " + queryTab + "\n------");
+                   setTimeout( () => { client.execute(queryTab, [], {prepare: false})
                      .then( () => { wait = wait + i; if (wait == 120) return callback(); } ); }, 15000);
                 });
              })
@@ -184,7 +185,7 @@ module.exports =
     var truncateES = 'truncate table ' + k + '.' + s;
     var wait = 0;
 
-    client.execute(truncateES, {prepare: false}).then( (result) => {
+    client.execute(truncateES, [], {prepare: false}).then( (result) => {
       xrange(0,16).map( (i) => 
         {
            var sg = i.toString(16);
@@ -346,7 +347,7 @@ module.exports =
 
     if ( fsize > module.exports.maxsize ) 
     {
-       var defcluster = 26214400; // fixed size for now...
+       var defcluster = 67108864; // fixed size for now...
        var clcount = (fsize - (fsize % defcluster)) / defcluster; 
        if (fsize % defcluster !== 0) clcount++;
 
@@ -422,7 +423,7 @@ module.exports =
 
       function _sender(fhash, chash, count, buff, jobs, meta, trial) // assuming the column is first created by new_file().
       {
-        if ( trial > module.exports.retrial ) module.exports.events.emit(fhash, null);
+        if ( trial > module.exports.retrial ) return module.exports.events.emit(fhash, null);
         
         var rmsg = 'sending '; if (trial > 0) rmsg = 'resending (trial: ' + trial + ') ';
         var k = module.exports.keyspace;
@@ -822,7 +823,7 @@ module.exports =
       callback();
     }
 
-    var groups = 4; // fixed for now during tests ...
+    var groups = 1; // fixed for now during tests ...
     var thislist = module.exports._q_UL_List.shift(1);
     var jobgroups = module.exports._array_groups(thislist, groups);
 
