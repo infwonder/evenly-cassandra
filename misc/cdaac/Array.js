@@ -6,7 +6,6 @@ var o = ec._cluster_sizes(400,18);
 console.log(JSON.stringify(o, null, 2));
 */
 
-/*
 function cluster_edge(fsize, defcluster)
 {
   var edges = xrange(0, fsize, defcluster).toArray();
@@ -16,8 +15,7 @@ function cluster_edge(fsize, defcluster)
   console.log(JSON.stringify(o, null, 2));
 };
 
-cluster_edge(25, 3);
-*/
+cluster_edge(631242752, 104857600);
 
 /*
 function _array_ungroup(agroup) 

@@ -1,4 +1,5 @@
 const Promise = require("bluebird");
+const fs = require("fs");
 var ec = require('evenly-cassandra');
 var ep = require('evenly-cassandra-packer');
 var connect = Promise.promisify(ec.connect);
@@ -14,11 +15,11 @@ var inpath = process.argv[2]; // comma seperated list
 var inpaths = inpath.split(',');
 */
 
-ec.peers = ['10.100.1.101', '10.100.1.102', '10.100.1.103', '10.100.1.104', '10.100.1.108', '10.100.1.110', '10.100.1.106', '10.100.1.112', '10.100.1.105', '10.100.1.111', '10.100.1.113'];
-ec.outdir = '/home/jasonlin/tmp';
+ec.peers = JSON.parse(fs.readFileSync("./peers.json"));
+ec.outdir = '/tmp';
 ec.indir = process.argv[2];
-ep.triggerTime = 15000; // 15 secs
-ep.maxsize = 314572800; // 300 MB;
+ep.triggerTime = 100; // 0.1 secs
+ep.maxsize = 1048576; // 1 MB
 
 connect().then( () => 
   { 
@@ -26,7 +27,7 @@ connect().then( () =>
       ep.watcher(ec.indir, (error, totalsize, filelist) => 
       {
         console.log("New batch of files arrived: totalsize = " + totalsize + ", list: " + JSON.stringify(filelist, null, 2));
-        ec.new_qTask_upload(filelist, (err) => { if (err) throw(err); });
+        setTimeout(() => { ec.new_qTask_upload(filelist, (err) => { if (err) throw(err); }); }, 2900);
       });
     });
 

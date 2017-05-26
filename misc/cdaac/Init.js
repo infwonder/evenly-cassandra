@@ -1,12 +1,13 @@
 const Promise = require("bluebird");
+const fs = require("fs");
 var ec = require('evenly-cassandra');
 var connect = Promise.promisify(ec.connect);
 var init_storage = Promise.promisify(ec.init_storage);
 var join_chunks = Promise.promisify(ec.join_chunks);
 var delete_file = Promise.promisify(ec.delete_file);
 
-ec.peers = ['10.100.1.101', '10.100.1.102', '10.100.1.103', '10.100.1.104', '10.100.1.105', '10.100.1.106', '10.100.1.109', '10.100.1.112', '10.100.1.111', '10.100.1.113'];
-ec.outdir = '/home/jasonlin/tmp';
+ec.peers = JSON.parse(fs.readFileSync("./peers.json"));
+ec.outdir = '/tmp';
 
 connect().then( function()
   {

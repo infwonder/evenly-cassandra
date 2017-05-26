@@ -1,4 +1,5 @@
 const Promise = require("bluebird");
+const fs = require("fs");
 var ec = require('evenly-cassandra');
 var connect = Promise.promisify(ec.connect);
 
@@ -12,9 +13,8 @@ if (process.argv.length <= 2)
 var inpath = process.argv[2]; // comma seperated list
 var inpaths = inpath.split(',');
 
-
-ec.peers = ['10.100.1.101', '10.100.1.102', '10.100.1.103', '10.100.1.104', '10.100.1.105', '10.100.1.106', '10.100.1.112', '10.100.1.109', '10.100.1.111', '10.100.1.113'];
-ec.outdir = '/home/jasonlin/tmp';
+ec.peers = JSON.parse(fs.readFileSync("./peers.json"));
+ec.outdir = '/tmp';
 //ec.indir = process.argv[2];
 
 connect().then( () => 
@@ -32,7 +32,7 @@ connect().then( () =>
        }); 
 */
 
-    ec.batch_download(inpaths, 4, (err, aglist) => 
+    ec.batch_download(inpaths, 2, (err, aglist) => 
        {
          if (err) {
            console.log("file failed to be downloaded are: \n" + aglist);
