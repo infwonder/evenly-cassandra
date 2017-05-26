@@ -810,6 +810,23 @@ module.exports =
     return callback();
   },
 
+  init_watcher_download: function(callback) 
+  {
+    if (module.exports.outdir === undefined) throw("Please define outdir attribute first ...");
+    if (module.exports.DLJobQ === undefined) module.exports.DLJobQ = queue(); // initialize queue
+    module.exports.DLJobQ.autostart = true;
+    module.exports.DLJobQ.start((err) => { if (err) throw(err); });
+
+    return callback();
+  },
+
+  new_qTask_download: function(hashlist, callback)
+  {
+    module.exports._q_DL_List.push(hashlist);
+    module.exports.DLJobQ.push(module.exports._qTask_download);
+    return callback();
+  },
+
 // New form of job queue with queue NPM module ...
   ULJobQ: undefined,
   DLJobQ: undefined,
@@ -828,6 +845,20 @@ module.exports =
     var jobgroups = module.exports._array_groups(thislist, groups);
 
     module.exports._batch_sessions(jobgroups, module.exports._new_batch_upload, callback);
+  },
+
+  _qTask_download: function(callback)
+  {
+    if (module.exports._q_DL_List.length === 0) {
+      console.log("It seems that the hash list is empty ...");
+      callback();
+    }
+
+    var groups = 1; // fixed for now during tests ...
+    var thislist = module.exports._q_DL_List.shift(1);
+    var jobgroups = module.exports._array_groups(thislist, groups);
+
+    module.exports._batch_sessions(jobgroups, module.exports._new_batch_download, callback);
   },
 
   _new_batch_download: function(fhashlist, callback)
