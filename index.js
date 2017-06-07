@@ -40,7 +40,7 @@ module.exports =
   maxcsize: 524288,
   maxsize: 67108864,
   slgroup: 3,
-  retrial: 4,
+  retrial: 20,
   retrial_time: 3500,
   batchsize: 10,
   events: evenlySender,
@@ -85,6 +85,7 @@ module.exports =
     var failedlist = []; 
     var donelist = [];
     var current = 0;
+    var timeout = 104;
 
     function _callback(err, ag) 
     {
@@ -101,12 +102,28 @@ module.exports =
           return callback(null, donelist);
         }
       }
-        
-      current++; console.log("DEBUG: current = " + current);
-      nextcall(arraygroups[current], (err, list) => { return _callback(err, list); });
+
+      var fsize = 0;
+      arraygroups[current].map((i) => 
+      {
+        var stats = fs.statSync(i);
+        fsize += stats.size;
+      });
+
+      current++;
+
+      timeout = fsize / 500; 
+      if (timeout <= 4000) {
+          timeout = 4500;
+      } else if (timeout >= 90000) {
+          timeout = 95000;
+      }
+      console.log("DEBUG:!!!!! Waiting " + timeout + " msecs before next job!!!!!");
+      
+      setTimeout(() => { nextcall(arraygroups[current], (err, list) => { return _callback(err, list); }); }, timeout);
     } 
 
-    console.log("DEBUG: issuing first call ...");
+    //console.log("DEBUG: issuing first call ...");
     nextcall(arraygroups[current], (err, list) => { return _callback(err, list) });
   },
 
@@ -798,6 +815,8 @@ module.exports =
     if (module.exports.indir === undefined) throw("Please define indir attribute first ...");
     if (module.exports.ULJobQ === undefined) module.exports.ULJobQ = queue(); // initialize queue
     module.exports.ULJobQ.autostart = true;
+    module.exports.ULJobQ.concurency = 1;
+    module.exports.ULJobQ.timeout = 86400000;
     module.exports.ULJobQ.start((err) => { if (err) throw(err); });
 
     return callback();
@@ -815,6 +834,8 @@ module.exports =
     if (module.exports.outdir === undefined) throw("Please define outdir attribute first ...");
     if (module.exports.DLJobQ === undefined) module.exports.DLJobQ = queue(); // initialize queue
     module.exports.DLJobQ.autostart = true;
+    module.exports.ULJobQ.concurency = 18;
+    module.exports.ULJobQ.timeout = 86400000;
     module.exports.DLJobQ.start((err) => { if (err) throw(err); });
 
     return callback();
@@ -840,7 +861,7 @@ module.exports =
       callback();
     }
 
-    var groups = 1; // fixed for now during tests ...
+    var groups = 4; // fixed for now during tests ...
     var thislist = module.exports._q_UL_List.shift(1);
     var jobgroups = module.exports._array_groups(thislist, groups);
 
