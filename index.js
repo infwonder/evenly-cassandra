@@ -40,8 +40,8 @@ module.exports =
   maxcsize: 524288,
   maxsize: 67108864,
   slgroup: 3,
-  retrial: 20,
-  retrial_time: 3500,
+  retrial: 4,
+  retrial_time: 20000,
   batchsize: 10,
   events: evenlySender,
 
@@ -97,7 +97,7 @@ module.exports =
 
       if (current == arraygroups.length - 1) {
         if (failedlist.length != 0) {
-          return callback("Some jobs were not finished ...", failedlist);
+          return callback(failedlist, failedlist);
         } else {
           return callback(null, donelist);
         }
@@ -113,8 +113,8 @@ module.exports =
       current++;
 
       timeout = fsize / 500; 
-      if (timeout <= 4000) {
-          timeout = 4500;
+      if (timeout <= 15000) {
+          timeout = 15000;
       } else if (timeout >= 90000) {
           timeout = 95000;
       }
@@ -408,15 +408,16 @@ module.exports =
         client.batch(batchInit, {prepare: true}, (err) => 
         { 
           if (err) {
-            client.shutdown();
-            throw(err); 
+            //client.shutdown();
+            console.log("DEBUG: sg_* tables initialization failed!");
+            return callback(err, filemd5);
           }
 
           module.exports.chunk_file(path, fsize, defchunk, filemd5, ccount);
           module.exports.events.once(filemd5, (meta) => 
             { 
                if (meta === null) {
-                 client.shutdown();
+                 //client.shutdown();
                  return callback("Error: file " + filemd5 + " upload failed!!!!!", filemd5);
                }
 
@@ -459,6 +460,7 @@ module.exports =
           .catch( (err) => 
             {
                trial++; console.log(" ... retry uploading chunk " + count + " (" + trial + "/" + module.exports.retrial + ") ...");
+               if ( trial > module.exports.retrial ) return module.exports.events.emit(fhash, null);
                setTimeout( () => { _sender(fhash, chash, count, buff, jobs, meta, trial); }, module.exports.retrial_time );  
             });
       }
@@ -834,7 +836,7 @@ module.exports =
     if (module.exports.outdir === undefined) throw("Please define outdir attribute first ...");
     if (module.exports.DLJobQ === undefined) module.exports.DLJobQ = queue(); // initialize queue
     module.exports.DLJobQ.autostart = true;
-    module.exports.ULJobQ.concurency = 18;
+    module.exports.ULJobQ.concurency = 1;
     module.exports.ULJobQ.timeout = 86400000;
     module.exports.DLJobQ.start((err) => { if (err) throw(err); });
 
@@ -861,9 +863,9 @@ module.exports =
       callback();
     }
 
-    var groups = 4; // fixed for now during tests ...
+    // var groups = 4; // fixed for now during tests ...
     var thislist = module.exports._q_UL_List.shift(1);
-    var jobgroups = module.exports._array_groups(thislist, groups);
+    var jobgroups = module.exports._array_groups(thislist, module.exports.batchsize);
 
     module.exports._batch_sessions(jobgroups, module.exports._new_batch_upload, callback);
   },
@@ -875,9 +877,8 @@ module.exports =
       callback();
     }
 
-    var groups = 1; // fixed for now during tests ...
     var thislist = module.exports._q_DL_List.shift(1);
-    var jobgroups = module.exports._array_groups(thislist, groups);
+    var jobgroups = module.exports._array_groups(thislist, module.exports.batchsize);
 
     module.exports._batch_sessions(jobgroups, module.exports._new_batch_download, callback);
   },
